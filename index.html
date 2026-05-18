@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>HTEX Billing Pro - Fixed</title>
+    <title>Print Solution - Billing Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -17,6 +17,14 @@
         }
 
         @media print {
+            body.print-statement-mode #main-application,
+            body.print-statement-mode #auth-section {
+                display: none !important;
+            }
+            body.print-statement-mode #statement-print-area {
+                display: block !important;
+            }
+
             .no-print {
                 display: none !important;
             }
@@ -65,7 +73,7 @@
 
 <body class="bg-gray-200 p-2 md:p-6 text-sm transition-colors duration-300">
 
-
+    <div id="statement-print-area" class="hidden"></div>
     <!-- AUTH SECTION -->
     <div id="auth-section"
         class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-4 font-sans text-white fixed inset-0 z-40 overflow-y-auto">
@@ -81,13 +89,13 @@
                 </div>
                 <h1
                     class="text-2xl font-black bg-gradient-to-r from-blue-400 via-indigo-300 to-pink-400 bg-clip-text text-transparent uppercase tracking-wider">
-                    HTEX Billing Pro</h1>
+                    Print Solution</h1>
                 <p class="text-slate-400 text-xs mt-1 uppercase tracking-widest font-semibold">Admin Gateway Portal</p>
             </div>
             <div class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Email Address</label>
-                    <input id="auth-email" type="email" placeholder="admin@htex.com"
+                    <input id="auth-email" type="email" placeholder="admin@printsolution.com"
                         class="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 text-slate-100 rounded-lg p-3 outline-none text-sm transition">
                 </div>
                 <div>
@@ -120,7 +128,7 @@
                 </div>
             </div>
             <div class="border-t border-slate-800/80 pt-4 text-center">
-                <p class="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">&copy; HTEX Manufacturer
+                <p class="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">&copy; Print Solution
                     Operations Panel</p>
             </div>
         </div>
@@ -143,7 +151,7 @@
                             d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
                         </path>
                     </svg>
-                    <span class="font-extrabold text-xs uppercase tracking-wider text-slate-100">HTEX Billing Pro</span>
+                    <span class="font-extrabold text-xs uppercase tracking-wider text-slate-100">Print Solution</span>
                 </div>
             </div>
             <div class="flex items-center gap-2 text-[10px] font-semibold text-slate-400">
@@ -176,7 +184,7 @@
                         Reports
                     </button>
                 </div>
-                <span class="text-xs font-black text-gray-500 tracking-tight">HTEX Billing Pro</span>
+                <span class="text-xs font-black text-gray-500 tracking-tight">Print Solution</span>
             </div>
             <div class="flex items-center gap-2 flex-wrap text-xs">
                 <div id="db-status-badge-container"
@@ -735,7 +743,7 @@
 
         function bypassToDemo() {
             // FIX #2: Prevent multiple calls from reinitializing editor
-            activeAdminEmail = activeAdminEmail || "demo@htex.com";
+            activeAdminEmail = activeAdminEmail || "demo@printsolution.com";
             document.getElementById('admin-user-display').innerText = activeAdminEmail;
             showScreen('main-application');
             initEditor(); // Safe — guarded by editorInitialized flag
@@ -1042,7 +1050,110 @@
         }
 
         function printMonthlyReport() {
+            const invoices = window.globalInvoices;
+            const selectedMonthStr = document.getElementById('dash-month-select').value;
+            
+            let filteredInvoices = invoices;
+            let periodText = "All Time";
+            
+            if (selectedMonthStr) {
+                const [selYear, selMonth] = selectedMonthStr.split('-');
+                periodText = `${getMonthName(selMonth)} ${selYear}`;
+                filteredInvoices = invoices.filter(inv => {
+                    const dateStr = inv.data.date || '';
+                    const parts = dateStr.split('/');
+                    if (parts.length !== 3) return false;
+                    const [d, m, y] = parts;
+                    return m === selMonth && y === selYear;
+                });
+            }
+            
+            let totalRevenue = 0, totalDue = 0, totalCollected = 0;
+            let rowsHtml = '';
+            
+            filteredInvoices.forEach(inv => {
+                const id = inv.data.id || inv.key.replace('inv_', '');
+                const date = inv.data.date || new Date().toLocaleDateString('en-GB');
+                const name = inv.data.name || "Customer";
+                const status = (inv.data.status || "unpaid").toUpperCase();
+                
+                const { grandTotal, collected, due } = calcInvoiceTotals(inv.data);
+                
+                totalRevenue += grandTotal;
+                totalCollected += collected;
+                totalDue += due;
+                
+                rowsHtml += `
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 8px;">${date}</td>
+                        <td style="padding: 8px; font-weight: bold;">#${id}</td>
+                        <td style="padding: 8px;">${name}</td>
+                        <td style="padding: 8px;">${status}</td>
+                        <td style="padding: 8px; text-align: right;">${grandTotal.toLocaleString()}</td>
+                        <td style="padding: 8px; text-align: right;">${collected.toLocaleString()}</td>
+                        <td style="padding: 8px; text-align: right;">${due.toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+            
+            if (filteredInvoices.length === 0) {
+                rowsHtml = `<tr><td colspan="7" style="padding: 16px; text-align: center;">No invoices found for this period.</td></tr>`;
+            }
+            
+            const statementHtml = `
+                <div style="font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto; color: #000;">
+                    <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 10px;">
+                        <h1 style="margin: 0; font-size: 24px; text-transform: uppercase;">Print Solution</h1>
+                        <h2 style="margin: 5px 0; font-size: 18px; color: #444;">Monthly Statement</h2>
+                        <p style="margin: 0; font-size: 14px;"><strong>Period:</strong> ${periodText}</p>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
+                        <div style="border: 1px solid #ccc; padding: 15px; border-radius: 5px; width: 30%; text-align: center;">
+                            <div style="font-size: 12px; font-weight: bold; text-transform: uppercase;">Total Revenue</div>
+                            <div style="font-size: 20px; font-weight: bold; margin-top: 5px;">৳ ${totalRevenue.toLocaleString()}</div>
+                        </div>
+                        <div style="border: 1px solid #ccc; padding: 15px; border-radius: 5px; width: 30%; text-align: center;">
+                            <div style="font-size: 12px; font-weight: bold; text-transform: uppercase;">Total Collected</div>
+                            <div style="font-size: 20px; font-weight: bold; margin-top: 5px;">৳ ${totalCollected.toLocaleString()}</div>
+                        </div>
+                        <div style="border: 1px solid #ccc; padding: 15px; border-radius: 5px; width: 30%; text-align: center;">
+                            <div style="font-size: 12px; font-weight: bold; text-transform: uppercase;">Total Due</div>
+                            <div style="font-size: 20px; font-weight: bold; margin-top: 5px;">৳ ${totalDue.toLocaleString()}</div>
+                        </div>
+                    </div>
+                    
+                    <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                        <thead>
+                            <tr style="background-color: #f5f5f5; border-bottom: 2px solid #000;">
+                                <th style="padding: 10px 8px; text-align: left;">Date</th>
+                                <th style="padding: 10px 8px; text-align: left;">Invoice #</th>
+                                <th style="padding: 10px 8px; text-align: left;">Customer</th>
+                                <th style="padding: 10px 8px; text-align: left;">Status</th>
+                                <th style="padding: 10px 8px; text-align: right;">Total (৳)</th>
+                                <th style="padding: 10px 8px; text-align: right;">Collected (৳)</th>
+                                <th style="padding: 10px 8px; text-align: right;">Due (৳)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+                    
+                    <div style="margin-top: 40px; font-size: 10px; color: #666; text-align: center;">
+                        Generated on ${new Date().toLocaleString('en-GB')}
+                    </div>
+                </div>
+            `;
+            
+            const printArea = document.getElementById('statement-print-area');
+            if (printArea) {
+                printArea.innerHTML = statementHtml;
+            }
+            
+            document.body.classList.add('print-statement-mode');
             window.print();
+            document.body.classList.remove('print-statement-mode');
         }
 
         function exportCSV() {
@@ -1075,7 +1186,7 @@
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `HTEX_Report_${new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}.csv`);
+            link.setAttribute("download", `PrintSolution_Report_${new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
