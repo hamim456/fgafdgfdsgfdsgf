@@ -17,10 +17,12 @@
         }
 
         @media print {
+
             body.print-statement-mode #main-application,
             body.print-statement-mode #auth-section {
                 display: none !important;
             }
+
             body.print-statement-mode #statement-print-area {
                 display: block !important;
             }
@@ -41,13 +43,24 @@
                 margin: 0 !important;
             }
 
+            #creator-section {
+                display: block !important;
+            }
+
             .paid-seal {
                 -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
 
             @page {
                 size: A4;
                 margin: 1cm;
+            }
+
+            /* Prevent rows from splitting across pages */
+            tr,
+            .item-row {
+                page-break-inside: avoid !important;
             }
         }
 
@@ -183,6 +196,13 @@
                         </svg>
                         Reports
                     </button>
+                    <button id="tab-insights" onclick="switchTab('insights')"
+                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-black transition-all text-gray-600 hover:text-blue-700">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        Business Insight
+                    </button>
                 </div>
                 <span class="text-xs font-black text-gray-500 tracking-tight">Print Solution</span>
             </div>
@@ -229,8 +249,12 @@
                 <div class="flex items-center justify-between border-b pb-2">
                     <h2 class="font-bold text-lg text-blue-800">BILLING PANEL</h2>
                     <div class="flex items-center gap-1.5">
-                        <input id="invoice_id_input" type="text" oninput="updateInvoiceIdManual()" placeholder="Invoice #" class="border p-1 rounded font-bold text-xs w-28 text-center uppercase focus:outline-none focus:border-blue-500 bg-gray-50 text-gray-700">
-                        <button onclick="autoGenerateInvoiceId()" class="bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold px-2 py-1 rounded text-[10px] uppercase transition-colors" title="Auto Generate ID">Auto</button>
+                        <input id="invoice_id_input" type="text" oninput="updateInvoiceIdManual()"
+                            placeholder="Invoice #"
+                            class="border p-1 rounded font-bold text-xs w-28 text-center uppercase focus:outline-none focus:border-blue-500 bg-gray-50 text-gray-700">
+                        <button onclick="autoGenerateInvoiceId()"
+                            class="bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold px-2 py-1 rounded text-[10px] uppercase transition-colors"
+                            title="Auto Generate ID">Auto</button>
                     </div>
                 </div>
                 <select id="payment_status" onchange="updatePreview()"
@@ -267,9 +291,13 @@
                     </div>
                 </div>
                 <div class="grid grid-cols-3 gap-2 border-t pt-4">
-                    <button onclick="saveInvoice()" class="bg-green-600 text-white p-2 rounded font-bold text-xs shadow hover:bg-green-700 transition">Save</button>
-                    <button onclick="loadInvoice()" class="bg-yellow-600 text-white p-2 rounded font-bold text-xs shadow hover:bg-yellow-700 transition">Load</button>
-                    <button onclick="resetInvoiceForm()" class="bg-blue-100 text-blue-700 p-2 rounded font-bold text-xs border border-blue-200 shadow hover:bg-blue-200 transition">New / Clear</button>
+                    <button onclick="saveInvoice()"
+                        class="bg-green-600 text-white p-2 rounded font-bold text-xs shadow hover:bg-green-700 transition">Save</button>
+                    <button onclick="loadInvoice()"
+                        class="bg-yellow-600 text-white p-2 rounded font-bold text-xs shadow hover:bg-yellow-700 transition">Load</button>
+                    <button onclick="resetInvoiceForm()"
+                        class="bg-blue-100 text-blue-700 p-2 rounded font-bold text-xs border border-blue-200 shadow hover:bg-blue-200 transition">New
+                        / Clear</button>
                 </div>
                 <select id="saved-invoices" class="w-full border p-2 rounded bg-gray-50 text-xs"></select>
                 <button onclick="window.print()"
@@ -310,7 +338,8 @@
                             <th class="w-32 text-right px-4">Total</th>
                         </tr>
                     </thead>
-                    <tbody id="v-items" class="text-xs text-gray-700 bg-white border-x border-b border-gray-200"></tbody>
+                    <tbody id="v-items" class="text-xs text-gray-700 bg-white border-x border-b border-gray-200">
+                    </tbody>
                 </table>
                 <div class="flex justify-between items-end mt-auto pb-10">
                     <div class="text-center w-48">
@@ -506,6 +535,7 @@
                 </div>
             </div>
         </div>
+
     </div><!-- Close #main-application -->
 
     <script>
@@ -633,7 +663,7 @@
                         snapshot.forEach(doc => {
                             window.globalInvoices.push({ key: doc.id, data: doc.data() });
                         });
-                        
+
                         // Sort locally (descending by key) to prevent missing index Cloud Error
                         window.globalInvoices.sort((a, b) => {
                             const numA = parseInt(a.key.replace(/\D/g, '')) || 0;
@@ -642,7 +672,7 @@
                         });
 
                         refreshList();
-                        
+
                         const badge = document.getElementById('db-status-badge');
                         const container = document.getElementById('db-status-badge-container');
                         const ping = document.getElementById('db-status-badge-ping');
@@ -816,17 +846,17 @@
             document.getElementById('discount_percent').value = '';
             document.getElementById('advance_paid').value = '';
             document.getElementById('saved-invoices').value = '';
-            
+
             document.getElementById('items-container').innerHTML = '<div class="font-bold text-sm">Items</div>';
             addItemRow();
-            
+
             document.getElementById('bill-date').innerText = new Date().toLocaleDateString('en-GB');
-            
+
             selectedSign = '';
             const img = document.getElementById('v-sign-img');
             img.src = '';
             img.classList.add('hidden');
-            
+
             updatePreview();
         }
 
@@ -1013,17 +1043,26 @@
             const creatorSection = document.getElementById('creator-section');
             const dashSection = document.getElementById('dashboard-section');
 
+            const activeTabClass = 'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-black transition-all bg-white text-blue-700 shadow-sm border border-gray-200';
+            const inactiveTabClass = 'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-black transition-all text-gray-600 hover:text-blue-700';
+
+            if (tabName === 'insights') {
+                window.location.href = 'business-insight.html';
+                return;
+            }
+
+            // Reset all sections and tabs
+            creatorSection.classList.add('hidden');
+            dashSection.classList.add('hidden');
+            creatorTab.className = inactiveTabClass;
+            dashTab.className = inactiveTabClass;
+
             if (tabName === 'creator') {
                 creatorSection.classList.remove('hidden');
-                dashSection.classList.add('hidden');
-                creatorTab.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-black transition-all bg-white text-blue-700 shadow-sm border border-gray-200';
-                dashTab.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-black transition-all text-gray-600 hover:text-blue-700';
+                creatorTab.className = activeTabClass;
             } else if (tabName === 'dashboard') {
-                creatorSection.classList.add('hidden');
                 dashSection.classList.remove('hidden');
-                creatorTab.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-black transition-all text-gray-600 hover:text-blue-700';
-                dashTab.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-black transition-all bg-white text-blue-700 shadow-sm border border-gray-200';
-
+                dashTab.className = activeTabClass;
                 const monthInput = document.getElementById('dash-month-select');
                 if (monthInput && !monthInput.value) {
                     const now = new Date();
@@ -1052,10 +1091,10 @@
         function printMonthlyReport() {
             const invoices = window.globalInvoices;
             const selectedMonthStr = document.getElementById('dash-month-select').value;
-            
+
             let filteredInvoices = invoices;
             let periodText = "All Time";
-            
+
             if (selectedMonthStr) {
                 const [selYear, selMonth] = selectedMonthStr.split('-');
                 periodText = `${getMonthName(selMonth)} ${selYear}`;
@@ -1067,22 +1106,22 @@
                     return m === selMonth && y === selYear;
                 });
             }
-            
+
             let totalRevenue = 0, totalDue = 0, totalCollected = 0;
             let rowsHtml = '';
-            
+
             filteredInvoices.forEach(inv => {
                 const id = inv.data.id || inv.key.replace('inv_', '');
                 const date = inv.data.date || new Date().toLocaleDateString('en-GB');
                 const name = inv.data.name || "Customer";
                 const status = (inv.data.status || "unpaid").toUpperCase();
-                
+
                 const { grandTotal, collected, due } = calcInvoiceTotals(inv.data);
-                
+
                 totalRevenue += grandTotal;
                 totalCollected += collected;
                 totalDue += due;
-                
+
                 rowsHtml += `
                     <tr style="border-bottom: 1px solid #ddd;">
                         <td style="padding: 8px;">${date}</td>
@@ -1095,11 +1134,11 @@
                     </tr>
                 `;
             });
-            
+
             if (filteredInvoices.length === 0) {
                 rowsHtml = `<tr><td colspan="7" style="padding: 16px; text-align: center;">No invoices found for this period.</td></tr>`;
             }
-            
+
             const statementHtml = `
                 <div style="font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto; color: #000;">
                     <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 10px;">
@@ -1145,12 +1184,12 @@
                     </div>
                 </div>
             `;
-            
+
             const printArea = document.getElementById('statement-print-area');
             if (printArea) {
                 printArea.innerHTML = statementHtml;
             }
-            
+
             document.body.classList.add('print-statement-mode');
             window.print();
             document.body.classList.remove('print-statement-mode');
@@ -1429,6 +1468,7 @@
                 }
             }
         }
+
     </script>
 </body>
 
