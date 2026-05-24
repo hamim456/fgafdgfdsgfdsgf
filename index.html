@@ -362,6 +362,10 @@
                             class="flex justify-between p-2 bg-blue-900 text-white rounded font-bold uppercase text-[10px]">
                             <span>Grand Total:</span><span id="v-grand">৳ 0</span>
                         </div>
+                        <div id="advance-row"
+                            class="flex justify-between p-2 bg-emerald-50 text-emerald-700 border-r-4 border-emerald-500 font-bold text-xs">
+                            <span>Advance Paid:</span><span id="v-advance">৳ 0</span>
+                        </div>
                         <div id="due-row"
                             class="flex justify-between p-2 bg-red-50 text-red-700 border-r-4 border-red-600 font-black">
                             <span>Balance Due:</span><span id="v-due" class="text-xl">৳ 0</span>
@@ -911,6 +915,15 @@
             } else {
                 document.getElementById('paid-seal').style.display = 'none';
                 document.getElementById('due-row').style.visibility = 'visible';
+            }
+
+            // Show or hide advance row based on advance amount
+            const advanceRow = document.getElementById('advance-row');
+            if (adv > 0) {
+                advanceRow.style.display = 'flex';
+                document.getElementById('v-advance').innerText = "৳ " + adv.toLocaleString();
+            } else {
+                advanceRow.style.display = 'none';
             }
 
             document.getElementById('v-name').innerText = document.getElementById('client_name').value || "Customer Name";
